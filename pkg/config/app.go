@@ -40,3 +40,7 @@ func Connect(opener DBOpener, loader EnvLoader) error {
 	fmt.Println("Database connection established!")
 	return nil
 }
+
+func GetDB() *gorm.DB {
+	return db
+}
