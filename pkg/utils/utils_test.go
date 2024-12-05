@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSetJSONContentType(t *testing.T) {
@@ -56,6 +59,64 @@ func TestSetJSONContentType(t *testing.T) {
 			if got := rec.Header().Get("Content-Type"); got != tt.expectedHeader {
 				t.Errorf("Content-Type = %v, want %v", got, tt.expectedHeader)
 			}
+		})
+	}
+}
+
+type TestStruct struct {
+	Name string `json:"name"`
+}
+
+func TestParseBody(t *testing.T) {
+	tests := []struct {
+		name            string
+		body            string
+		expectedErr     bool
+		expectedMessage string
+	}{
+		{
+			name:            "Successful body read and valid JSON",
+			body:            `{"name":"John"}`,
+			expectedErr:     false,
+			expectedMessage: "",
+		},
+		{
+			name:            "Failed body read",
+			body:            "",
+			expectedErr:     true,
+			expectedMessage: "failed to read request body",
+		},
+		{
+			name:            "Invalid json format",
+			body:            `{"name":"John",}`,
+			expectedErr:     true,
+			expectedMessage: "error parsing JSON",
+		},
+		{
+			name:            "Empty body",
+			body:            ``,
+			expectedErr:     true,
+			expectedMessage: "error parsing JSON",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "http://example.com", bytes.NewBufferString(tt.body))
+			assert.NotNil(t, req)
+
+			rec := httptest.NewRecorder()
+
+			var result TestStruct
+			err := ParseBody(req, &result)
+
+			if tt.expectedErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedMessage)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, http.StatusOK, rec.Code)
 		})
 	}
 }
