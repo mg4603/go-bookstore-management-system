@@ -14,7 +14,9 @@ var (
 	db *gorm.DB
 )
 
-func Connect() error {
+type DBOpener func(dialector gorm.Dialector, config *gorm.Config) (*gorm.DB, error)
+
+func Connect(opener DBOpener) error {
 	if err := godotenv.Load(); err != nil {
 		return fmt.Errorf("error while loading .env file: %w", err)
 	}
