@@ -33,7 +33,7 @@ func Connect(opener DBOpener, loader EnvLoader) error {
 		dbUserName, dbPassword, dbName)
 
 	var err error
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err = opener(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)
