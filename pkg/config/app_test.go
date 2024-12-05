@@ -19,3 +19,7 @@ func mockOpenWithError(dialector gorm.Dialector, config *gorm.Config) (*gorm.DB,
 func mockLoadEnvSuccess() error {
 	return nil
 }
+
+func mockLoadEnvFailure() error {
+	return errors.New("mocked environment loading error")
+}
