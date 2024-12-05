@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	_ "gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -16,8 +15,10 @@ var (
 
 type DBOpener func(dialector gorm.Dialector, config *gorm.Config) (*gorm.DB, error)
 
-func Connect(opener DBOpener) error {
-	if err := godotenv.Load(); err != nil {
+type EnvLoader func() error
+
+func Connect(opener DBOpener, loader EnvLoader) error {
+	if err := loader(); err != nil {
 		return fmt.Errorf("error while loading .env file: %w", err)
 	}
 
