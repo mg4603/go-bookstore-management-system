@@ -22,3 +22,11 @@ func loadEnv() error {
 	}
 	return nil
 }
+
+func openDB(dialector gorm.Dialector, config *gorm.Config) (*gorm.DB, error) {
+	if db, err := gorm.Open(dialector, config); err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	} else {
+		return db, nil
+	}
+}
