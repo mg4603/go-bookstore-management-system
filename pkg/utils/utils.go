@@ -22,7 +22,7 @@ func ParseBody(r *http.Request, x interface{}) error {
 		return fmt.Errorf("failed to read request body: %w", err)
 	}
 
-	if err := json.Unmarshal([]byte(body), x); err == nil {
+	if err := json.Unmarshal([]byte(body), x); err != nil {
 		return fmt.Errorf("error parsing JSON: %w", err)
 	}
 	return nil
