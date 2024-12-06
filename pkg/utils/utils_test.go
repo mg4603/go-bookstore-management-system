@@ -2,6 +2,8 @@ package utils
 
 import (
 	"bytes"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -67,41 +69,47 @@ type TestStruct struct {
 	Name string `json:"name"`
 }
 
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("failed to read request body")
+}
+
 func TestParseBody(t *testing.T) {
 	tests := []struct {
 		name            string
-		body            string
+		body            io.Reader
 		expectedErr     bool
 		expectedMessage string
 	}{
 		{
 			name:            "Successful body read and valid JSON",
-			body:            `{"name":"John"}`,
+			body:            bytes.NewBufferString(`{"name":"John"}`),
 			expectedErr:     false,
 			expectedMessage: "",
 		},
 		{
 			name:            "Failed body read",
-			body:            "",
+			body:            &errorReader{},
 			expectedErr:     true,
 			expectedMessage: "failed to read request body",
 		},
 		{
 			name:            "Invalid json format",
-			body:            `{"name":"John",}`,
+			body:            bytes.NewBufferString(`{"name":"John",}`),
 			expectedErr:     true,
 			expectedMessage: "error parsing JSON",
 		},
 		{
 			name:            "Empty body",
-			body:            ``,
+			body:            bytes.NewBufferString(``),
 			expectedErr:     true,
 			expectedMessage: "error parsing JSON",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", "http://example.com", bytes.NewBufferString(tt.body))
+			req := httptest.NewRequest("POST", "http://example.com", tt.body)
 			assert.NotNil(t, req)
 
 			rec := httptest.NewRecorder()
