@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/joho/godotenv"
+	"github.com/mg4603/go-bookstore-management-system/pkg/config"
 	"gorm.io/gorm"
 )
 
@@ -29,4 +30,10 @@ func openDB(dialector gorm.Dialector, config *gorm.Config) (*gorm.DB, error) {
 	} else {
 		return db, nil
 	}
+}
+
+func init() {
+	config.Connect(openDB, loadEnv)
+	db := config.GetDB()
+	db.AutoMigrate(&Book{})
 }
