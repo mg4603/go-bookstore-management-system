@@ -204,3 +204,73 @@ func TestGetBookById(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteBook(t *testing.T) {
+	mockDB, err := setup()
+	assert.NoError(t, err, "failed to setup test database")
+
+	defer func() {
+		sqlDB, _ := mockDB.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+	}()
+
+	seedBooks := []Book{
+		{Name: "Name 1", Author: "Author 1", Publication: "Publication 1"},
+		{Name: "Name 2", Author: "Author 2", Publication: "Publication 2"},
+	}
+
+	for _, book := range seedBooks {
+		err := CreateBook(&book, mockDB)
+		assert.NoError(t, err, "failed to seed database")
+	}
+
+	tests := []struct {
+		name          string
+		bookID        int64
+		expectedBook  *Book
+		expectedError error
+	}{
+		{
+			name:          "Valid book ID 1",
+			bookID:        1,
+			expectedBook:  &Book{Name: "Name 1", Author: "Author 1", Publication: "Publication 1"},
+			expectedError: nil,
+		},
+		{
+			name:          "Valid book ID 2",
+			bookID:        2,
+			expectedBook:  &Book{Name: "Name 2", Author: "Author 2", Publication: "Publication 2"},
+			expectedError: nil,
+		},
+		{
+			name:          "Non-existent book ID",
+			bookID:        9999999,
+			expectedBook:  nil,
+			expectedError: errors.New("book with ID 9999999 not found"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			deletedBook, err := DeleteBook(tc.bookID, mockDB)
+
+			if tc.expectedError != nil {
+				assert.Error(t, err, "expected error but got none")
+				assert.EqualError(t, tc.expectedError, err.Error(), "expected error = %w; got %w", tc.expectedError, err)
+			} else {
+				assert.NoError(t, err, "unexpected error: %w", err)
+			}
+
+			if tc.expectedBook != nil {
+				assert.NotNil(t, deletedBook, "expected book = %v; got nil", deletedBook)
+				assert.Equal(t, deletedBook.Name, tc.expectedBook.Name, "expected name = %v; got %v", tc.expectedBook.Name, deletedBook.Name)
+				assert.Equal(t, deletedBook.Author, tc.expectedBook.Author, "expected author = %v; got %v", tc.expectedBook.Author, deletedBook.Author)
+				assert.Equal(t, deletedBook.Publication, tc.expectedBook.Publication, "expected publication = %v; got %v", tc.expectedBook.Publication, deletedBook.Publication)
+			} else {
+				assert.Nil(t, deletedBook, "expected nil book but got one %v", deletedBook)
+			}
+		})
+	}
+}
