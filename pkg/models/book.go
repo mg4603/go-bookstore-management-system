@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -29,4 +30,16 @@ func GetAllBooks(db *gorm.DB) ([]Book, error) {
 		return nil, result.Error
 	}
 	return books, nil
+}
+
+func GetBookById(id int64, db *gorm.DB) (*Book, error) {
+	var book Book
+
+	if result := db.First(&book, id); result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("book with ID %d not found", id)
+		}
+		return nil, result.Error
+	}
+	return &book, nil
 }
