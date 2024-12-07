@@ -43,3 +43,18 @@ func GetBookById(id int64, db *gorm.DB) (*Book, error) {
 	}
 	return &book, nil
 }
+
+func DeleteBook(id int64, db *gorm.DB) (*Book, error) {
+	var book Book
+	if result := db.First(&book, id); result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("book with ID %d not found", id)
+		}
+		return nil, result.Error
+	}
+
+	if result := db.Delete(&book); result.Error != nil {
+		return nil, result.Error
+	}
+	return &book, nil
+}
