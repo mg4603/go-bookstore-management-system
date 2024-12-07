@@ -10,6 +10,10 @@ type BookstoreController struct {
 	DB *gorm.DB
 }
 
+func NewBookStoreController(db *gorm.DB) *BookstoreController {
+	return &BookstoreController{DB: db}
+}
+
 func (c *BookstoreController) CreateBook(w http.ResponseWriter, r *http.Request) {
 
 }
