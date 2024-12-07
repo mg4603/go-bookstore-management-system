@@ -1,8 +1,13 @@
 package controllers
 
-import "net/http"
+import (
+	"net/http"
+
+	"gorm.io/gorm"
+)
 
 type BookstoreController struct {
+	DB *gorm.DB
 }
 
 func (c *BookstoreController) CreateBook(w http.ResponseWriter, r *http.Request) {
