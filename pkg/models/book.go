@@ -22,3 +22,11 @@ func CreateBook(b *Book, db *gorm.DB) error {
 	}
 	return nil
 }
+
+func GetAllBooks(db *gorm.DB) ([]Book, error) {
+	var books []Book
+	if result := db.Find(&books); result.Error != nil {
+		return nil, result.Error
+	}
+	return books, nil
+}
