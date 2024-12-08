@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -127,4 +128,50 @@ func TestParseBody(t *testing.T) {
 			assert.Equal(t, http.StatusOK, rec.Code)
 		})
 	}
+}
+
+func TestHandleError(t *testing.T) {
+	tests := []struct {
+		name           string
+		statusCode     int
+		errorMessage   string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "Client error (400 Bad Request)",
+			statusCode:     http.StatusBadRequest,
+			errorMessage:   "Invalid Input data",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "An error occurred. Please try again later.",
+		},
+		{
+			name:           "Server error (500 internal server error)",
+			statusCode:     http.StatusInternalServerError,
+			errorMessage:   "Database connection failed",
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   "An error occurred. Please try again later.",
+		},
+		{
+			name:           "Server error (500 internal server error)",
+			statusCode:     http.StatusInternalServerError,
+			errorMessage:   "Database connection failed",
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   "An error occurred. Please try again later.",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			HandleError(recorder, tc.statusCode, tc.errorMessage)
+			assert.Equal(t, recorder.Code, tc.expectedStatus)
+
+			var response ErrorResponse
+			err := json.Unmarshal(recorder.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedBody, response.Message)
+		})
+	}
+
 }
