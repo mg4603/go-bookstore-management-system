@@ -7,29 +7,39 @@ import (
 )
 
 type BookstoreController struct {
-	DB *gorm.DB
+	CreateBook  http.HandlerFunc
+	GetBooks    http.HandlerFunc
+	GetBookById http.HandlerFunc
+	UpdateBook  http.HandlerFunc
+	DeleteBook  http.HandlerFunc
 }
 
 func NewBookStoreController(db *gorm.DB) *BookstoreController {
-	return &BookstoreController{DB: db}
+	return &BookstoreController{
+		CreateBook:  CreateBookHandler(db),
+		GetBooks:    GetBooksHandler(db),
+		GetBookById: GetBookByIdHandler(db),
+		UpdateBook:  UpdateBookHandler(db),
+		DeleteBook:  DeleteBookHandler(db),
+	}
 }
 
-func (c *BookstoreController) CreateBook(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (c *BookstoreController) GetBooks(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (c *BookstoreController) GetBookById(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (c *BookstoreController) UpdateBook(w http.ResponseWriter, r *http.Request) {
+func CreateBookHandler(db *gorm.DB) http.HandlerFunc {
 
 }
 
-func (c *BookstoreController) DeleteBook(w http.ResponseWriter, r *http.Request) {
+func GetBooksHandler(db *gorm.DB) http.HandlerFunc {
+
+}
+
+func GetBookByIdHandler(db *gorm.DB) http.HandlerFunc {
+
+}
+
+func UpdateBookHandler(db *gorm.DB) http.HandlerFunc {
+
+}
+
+func DeleteBookHandler(db *gorm.DB) http.HandlerFunc {
 
 }
