@@ -1,8 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/mg4603/go-bookstore-management-system/pkg/models"
+	"github.com/mg4603/go-bookstore-management-system/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +32,18 @@ func CreateBookHandler(db *gorm.DB) http.HandlerFunc {
 }
 
 func GetBooksHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		newBooks, err := models.GetAllBooks(db)
+		if err != nil {
+			utils.HandleError(w, http.StatusInternalServerError, "error fetching books from database")
+			return
+		}
 
+		if err := json.NewEncoder(w).Encode(newBooks); err != nil {
+			utils.HandleError(w, http.StatusInternalServerError, "error marshalling new books")
+			return
+		}
+	}
 }
 
 func GetBookByIdHandler(db *gorm.DB) http.HandlerFunc {
