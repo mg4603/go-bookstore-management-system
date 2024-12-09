@@ -3,15 +3,19 @@ package models
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 type Book struct {
-	gorm.Model
-	Name        string `gorm:"not null" json:"name"`
-	Author      string `gorm:"not null" json:"author"`
-	Publication string `gorm:"not null" json:"publication"`
+	ID          uint      `gorm:"primarykey" json:"ID"`
+	CreatedAt   time.Time `json:"-"`
+	UpdatedAt   time.Time `json:"-"`
+	DeletedAt   time.Time `gorm:"index" json:"-"`
+	Name        string    `gorm:"not null" json:"name"`
+	Author      string    `gorm:"not null" json:"author"`
+	Publication string    `gorm:"not null" json:"publication"`
 }
 
 func CreateBook(b *Book, db *gorm.DB) error {
