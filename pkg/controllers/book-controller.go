@@ -108,6 +108,34 @@ func UpdateBookHandler(db *models.DBModel) http.HandlerFunc {
 
 func DeleteBookHandler(db *models.DBModel) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		bookId, ok := vars["id"]
+		if !ok {
+			utils.HandleError(w, http.StatusBadRequest, "required field (id) is missing")
+			return
+		}
+
+		ID, err := strconv.ParseInt(bookId, 0, 0)
+
+		if err != nil {
+			utils.HandleError(w, http.StatusBadRequest, fmt.Sprintf("bad input; couldn't parse integer id from string bookID: %s", err.Error()))
+			return
+		}
+
+		book, err := db.DeleteBook(ID)
+		if err != nil {
+			if err.Error() == fmt.Sprintf("book with ID %d not found", ID) {
+				utils.HandleError(w, http.StatusNotFound, fmt.Sprintf("book with id %d does not exist in database", ID))
+			} else {
+				utils.HandleError(w, http.StatusInternalServerError, fmt.Sprintf("err while trying to delete book of id %d from db: %s", ID, err.Error()))
+			}
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(&book); err != nil {
+			utils.HandleError(w, http.StatusInternalServerError, fmt.Sprintf("error occurred while encoding server response: %s", err.Error()))
+			return
+		}
 
 	}
 }
