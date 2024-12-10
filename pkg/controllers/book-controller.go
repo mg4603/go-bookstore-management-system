@@ -31,7 +31,23 @@ func NewBookStoreController(db *models.DBModel) *BookstoreController {
 
 func CreateBookHandler(db *models.DBModel) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		createBook := &models.Book{}
 
+		if err := utils.ParseBody(r, createBook); err != nil {
+			utils.HandleError(w, http.StatusBadRequest, fmt.Sprintf("error parsing input into book model: %s", err))
+			return
+		}
+
+		if err := db.CreateBook(createBook); err != nil {
+			utils.HandleError(w, http.StatusInternalServerError, fmt.Sprintf("error while trying to create book: %s", err.Error()))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(createBook); err != nil {
+			utils.HandleError(w, http.StatusInternalServerError, fmt.Sprintf("error occured while encoding created book: %s", err.Error()))
+			return
+		}
 	}
 }
 
