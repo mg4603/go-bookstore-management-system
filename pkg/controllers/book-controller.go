@@ -6,7 +6,6 @@ import (
 
 	"github.com/mg4603/go-bookstore-management-system/pkg/models"
 	"github.com/mg4603/go-bookstore-management-system/pkg/utils"
-	"gorm.io/gorm"
 )
 
 type BookstoreController struct {
@@ -17,7 +16,7 @@ type BookstoreController struct {
 	DeleteBook  http.HandlerFunc
 }
 
-func NewBookStoreController(db *gorm.DB) *BookstoreController {
+func NewBookStoreController(db *models.DBModel) *BookstoreController {
 	return &BookstoreController{
 		CreateBook:  CreateBookHandler(db),
 		GetBooks:    GetBooksHandler(db),
@@ -27,13 +26,15 @@ func NewBookStoreController(db *gorm.DB) *BookstoreController {
 	}
 }
 
-func CreateBookHandler(db *gorm.DB) http.HandlerFunc {
+func CreateBookHandler(db *models.DBModel) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
+	}
 }
 
-func GetBooksHandler(db *gorm.DB) http.HandlerFunc {
+func GetBooksHandler(db *models.DBModel) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		newBooks, err := models.GetAllBooks(db)
+		newBooks, err := db.GetAllBooks()
 		if err != nil {
 			utils.HandleError(w, http.StatusInternalServerError, "error fetching books from database")
 			return
@@ -46,14 +47,20 @@ func GetBooksHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-func GetBookByIdHandler(db *gorm.DB) http.HandlerFunc {
+func GetBookByIdHandler(db *models.DBModel) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
+	}
 }
 
-func UpdateBookHandler(db *gorm.DB) http.HandlerFunc {
+func UpdateBookHandler(db *models.DBModel) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
+	}
 }
 
-func DeleteBookHandler(db *gorm.DB) http.HandlerFunc {
+func DeleteBookHandler(db *models.DBModel) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
+	}
 }
