@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -133,6 +135,74 @@ func TestGetBookByIdHandler(t *testing.T) {
 			req = mux.SetURLVars(req, map[string]string{"id": tt.bookId})
 
 			handler := utils.SetJSONContentType(GetBookByIdHandler(db))
+			handler.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+			assert.JSONEq(t, tt.expectedBody, rec.Body.String())
+		})
+	}
+}
+
+func TestCreateBookHandler(t *testing.T) {
+	testCases := []struct {
+		name           string
+		inputBody      interface{}
+		mockSetup      func(db *models.DBModel)
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:      "Successful book creation",
+			inputBody: &models.Book{Name: "Book1", Author: "Author1", Publication: "Publication1"},
+			mockSetup: func(db *models.DBModel) {
+
+			},
+			expectedStatus: http.StatusCreated,
+			expectedBody:   `{"ID":1,"name":"Book1","author":"Author1","publication":"Publication1"}`,
+		},
+		{
+			name:      "Invalid request body",
+			inputBody: map[string]string{"invalid field": "invalid value"},
+			mockSetup: func(db *models.DBModel) {
+
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+		{
+			name:      "Database error",
+			inputBody: models.Book{Name: "Book2", Author: "Author2", Publication: "Publication2"},
+			mockSetup: func(db *models.DBModel) {
+				sqlDB, _ := db.DB.DB()
+				if sqlDB != nil {
+					sqlDB.Close()
+				}
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			mockDB, err := tests.Setup()
+			assert.NoError(t, err)
+			defer func() {
+				sqlDB, _ := mockDB.DB()
+				if sqlDB != nil {
+					sqlDB.Close()
+				}
+			}()
+			db := &models.DBModel{DB: mockDB}
+			tt.mockSetup(db)
+
+			bodyBytes, err := json.Marshal(tt.inputBody)
+			assert.NoError(t, err, "failed to marshal input body")
+
+			req := httptest.NewRequest(http.MethodPost, "/books", bytes.NewReader(bodyBytes))
+			rec := httptest.NewRecorder()
+
+			handler := utils.SetJSONContentType(CreateBookHandler(db))
 			handler.ServeHTTP(rec, req)
 
 			assert.Equal(t, tt.expectedStatus, rec.Code)
