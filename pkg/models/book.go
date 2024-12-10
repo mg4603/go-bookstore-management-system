@@ -8,6 +8,13 @@ import (
 	"gorm.io/gorm"
 )
 
+type BookstoreDB interface {
+	CreateBook(b *Book) error
+	GetAllBooks() ([]Book, error)
+	GetBookById(id int64) (*Book, error)
+	DeleteBook(id int64) (*Book, error)
+}
+
 type Book struct {
 	ID          uint      `gorm:"primarykey" json:"ID"`
 	CreatedAt   time.Time `json:"-"`
@@ -18,28 +25,32 @@ type Book struct {
 	Publication string    `gorm:"not null" json:"publication"`
 }
 
-func CreateBook(b *Book, db *gorm.DB) error {
+type DBModel struct {
+	DB *gorm.DB
+}
+
+func (db *DBModel) CreateBook(b *Book) error {
 	if b.Author == "" || b.Name == "" || b.Publication == "" {
 		return errors.New("missing required fields")
 	}
-	if result := db.Create(b); result.Error != nil {
+	if result := db.DB.Create(b); result.Error != nil {
 		return result.Error
 	}
 	return nil
 }
 
-func GetAllBooks(db *gorm.DB) ([]Book, error) {
+func (db *DBModel) GetAllBooks() ([]Book, error) {
 	var books []Book
-	if result := db.Find(&books); result.Error != nil {
+	if result := db.DB.Find(&books); result.Error != nil {
 		return nil, result.Error
 	}
 	return books, nil
 }
 
-func GetBookById(id int64, db *gorm.DB) (*Book, error) {
+func (db *DBModel) GetBookById(id int64) (*Book, error) {
 	var book Book
 
-	if result := db.First(&book, id); result.Error != nil {
+	if result := db.DB.First(&book, id); result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("book with ID %d not found", id)
 		}
@@ -48,16 +59,16 @@ func GetBookById(id int64, db *gorm.DB) (*Book, error) {
 	return &book, nil
 }
 
-func DeleteBook(id int64, db *gorm.DB) (*Book, error) {
+func (db *DBModel) DeleteBook(id int64) (*Book, error) {
 	var book Book
-	if result := db.First(&book, id); result.Error != nil {
+	if result := db.DB.First(&book, id); result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("book with ID %d not found", id)
 		}
 		return nil, result.Error
 	}
 
-	if result := db.Delete(&book); result.Error != nil {
+	if result := db.DB.Delete(&book); result.Error != nil {
 		return nil, result.Error
 	}
 	return &book, nil

@@ -26,6 +26,7 @@ func TestCreateBook(t *testing.T) {
 	mockDB, err := setup()
 	assert.NoError(t, err, "failed to setup database: %w", err)
 
+	db := &DBModel{DB: mockDB}
 	defer func() {
 		sqlDB, _ := mockDB.DB()
 		if sqlDB != nil {
@@ -58,7 +59,7 @@ func TestCreateBook(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := CreateBook(tc.book, mockDB)
+			err := db.CreateBook(tc.book)
 			if tc.expectedError != "" {
 				assert.Error(t, err, tc.expectedError)
 			} else {
@@ -71,6 +72,7 @@ func TestCreateBook(t *testing.T) {
 func TestGetAllBooks(t *testing.T) {
 	mockDB, err := setup()
 	assert.NoError(t, err, "failed to setup database: %w", err)
+	db := &DBModel{DB: mockDB}
 
 	defer func() {
 		sqlDB, _ := mockDB.DB()
@@ -118,11 +120,11 @@ func TestGetAllBooks(t *testing.T) {
 			mockDB.Exec("DELETE FROM books")
 
 			for _, book := range tc.setupBooks {
-				err := CreateBook(&book, mockDB)
+				err := db.CreateBook(&book)
 				assert.NoError(t, err, "failed to insert setup data: %w", err)
 			}
 
-			books, err := GetAllBooks(mockDB)
+			books, err := db.GetAllBooks()
 			assert.NoError(t, err, "error retrieving books: %w", err)
 			assert.Equal(t, len(books), tc.expectedLength, "incorrect nmber of books returned")
 
@@ -138,6 +140,7 @@ func TestGetAllBooks(t *testing.T) {
 func TestGetBookById(t *testing.T) {
 	mockDB, err := setup()
 	assert.NoError(t, err, "failed to setup test database")
+	db := &DBModel{DB: mockDB}
 
 	defer func() {
 		sqlDB, _ := mockDB.DB()
@@ -152,7 +155,7 @@ func TestGetBookById(t *testing.T) {
 	}
 
 	for _, book := range seedBooks {
-		err := CreateBook(&book, mockDB)
+		err := db.CreateBook(&book)
 		assert.NoError(t, err, "failed to seed database")
 	}
 
@@ -184,7 +187,7 @@ func TestGetBookById(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			book, err := GetBookById(tc.bookID, mockDB)
+			book, err := db.GetBookById(tc.bookID)
 
 			if tc.expectedError != nil {
 				assert.Error(t, err, "expected error got none")
@@ -208,6 +211,7 @@ func TestGetBookById(t *testing.T) {
 func TestDeleteBook(t *testing.T) {
 	mockDB, err := setup()
 	assert.NoError(t, err, "failed to setup test database")
+	db := &DBModel{DB: mockDB}
 
 	defer func() {
 		sqlDB, _ := mockDB.DB()
@@ -222,7 +226,7 @@ func TestDeleteBook(t *testing.T) {
 	}
 
 	for _, book := range seedBooks {
-		err := CreateBook(&book, mockDB)
+		err := db.CreateBook(&book)
 		assert.NoError(t, err, "failed to seed database")
 	}
 
@@ -254,7 +258,7 @@ func TestDeleteBook(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			deletedBook, err := DeleteBook(tc.bookID, mockDB)
+			deletedBook, err := db.DeleteBook(tc.bookID)
 
 			if tc.expectedError != nil {
 				assert.Error(t, err, "expected error but got none")
