@@ -210,3 +210,79 @@ func TestCreateBookHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteBookHandler(t *testing.T) {
+	testCases := []struct {
+		name           string
+		bookId         string
+		mockSetup      func(db *models.DBModel)
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:   "Successful deletion",
+			bookId: "1",
+			mockSetup: func(db *models.DBModel) {
+				book := &models.Book{Name: "Book1", Author: "Author1", Publication: "Publication1"}
+				err := db.CreateBook(book)
+				assert.NoError(t, err)
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"ID":1,"name":"Book1","author":"Author1","publication":"Publication1"}`,
+		},
+		{
+			name:           "Missing id parameter",
+			bookId:         "",
+			mockSetup:      func(db *models.DBModel) {},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+		{
+			name:           "Invalid id format",
+			bookId:         "abc",
+			mockSetup:      func(db *models.DBModel) {},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+		{
+			name:           "Book not found",
+			bookId:         "9999",
+			mockSetup:      func(db *models.DBModel) {},
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+		{
+			name:   "Database error",
+			bookId: "1",
+			mockSetup: func(db *models.DBModel) {
+				sqlDB, _ := db.DB.DB()
+				if sqlDB != nil {
+					sqlDB.Close()
+				}
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockDB, err := tests.Setup()
+			assert.NoError(t, err)
+
+			db := &models.DBModel{DB: mockDB}
+
+			tc.mockSetup(db)
+
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodDelete, "/books/{id}", nil)
+			req = mux.SetURLVars(req, map[string]string{"id": tc.bookId})
+
+			handler := utils.SetJSONContentType(DeleteBookHandler(db))
+			handler.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.expectedStatus, rec.Code)
+			assert.JSONEq(t, tc.expectedBody, rec.Body.String())
+		})
+	}
+}
