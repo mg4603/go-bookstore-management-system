@@ -103,6 +103,56 @@ func GetBookByIdHandler(db *models.DBModel) http.HandlerFunc {
 func UpdateBookHandler(db *models.DBModel) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		updateBook := &models.Book{}
+		if err := utils.ParseBody(r, updateBook); err != nil {
+			utils.HandleError(w, http.StatusBadRequest, fmt.Sprintf("error occurred while trying to parse json input: %s", err.Error()))
+			return
+		}
+
+		vars := mux.Vars(r)
+		bookId, ok := vars["id"]
+		if !ok {
+			utils.HandleError(w, http.StatusBadRequest, "required parameter id missing in input")
+			return
+		}
+
+		ID, err := strconv.ParseInt(bookId, 0, 0)
+		if err != nil {
+			utils.HandleError(w, http.StatusBadRequest, fmt.Sprintf("error parsing int ID from string bookID = %s", bookId))
+			return
+		}
+
+		book, err := db.GetBookById(ID)
+		if err != nil {
+			if err.Error() == fmt.Sprintf("book with ID %d not found", ID) {
+				utils.HandleError(w, http.StatusNotFound, fmt.Sprintf("book with ID %d not found; %s", ID, err.Error()))
+			} else {
+				utils.HandleError(w, http.StatusInternalServerError, fmt.Sprintf("error occurred during database lookup: %s", err.Error()))
+			}
+			return
+		}
+
+		if updateBook.Name != "" {
+			book.Name = updateBook.Name
+		}
+
+		if updateBook.Author != "" {
+			book.Author = updateBook.Author
+		}
+
+		if updateBook.Publication != "" {
+			book.Publication = updateBook.Publication
+		}
+
+		if err := db.DB.Save(&book).Error; err != nil {
+			utils.HandleError(w, http.StatusInternalServerError, fmt.Sprintf("error updating book: %s", err.Error()))
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode((&book)); err != nil {
+			utils.HandleError(w, http.StatusInternalServerError, fmt.Sprintf("error occurred while trying to encode book for response %s", err.Error()))
+			return
+		}
 	}
 }
 
