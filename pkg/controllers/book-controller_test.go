@@ -286,3 +286,93 @@ func TestDeleteBookHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateBookHandler(t *testing.T) {
+	testCases := []struct {
+		name           string
+		bookId         string
+		inputBody      *models.Book
+		mockSetup      func(db *models.DBModel)
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:      "Successful Update",
+			bookId:    "1",
+			inputBody: &models.Book{Name: "Updated Book", Author: "Updated Author", Publication: "Updated Publication"},
+			mockSetup: func(db *models.DBModel) {
+				book := &models.Book{Name: "Original Book", Author: "Original Author", Publication: "Original Publication"}
+				err := db.CreateBook(book)
+				assert.NoError(t, err)
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"ID":1,"name":"Updated Book","author":"Updated Author","publication":"Updated Publication"}`,
+		},
+		{
+			name:           "Record not found",
+			bookId:         "2",
+			inputBody:      &models.Book{Name: "Update non-existant book"},
+			mockSetup:      func(db *models.DBModel) {},
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+		{
+			name:      "Invalid ID format",
+			bookId:    "abc",
+			inputBody: &models.Book{Name: "Invalid Update", Author: "Invalid Author", Publication: "Invalid Publication"},
+			mockSetup: func(db *models.DBModel) {
+				book := &models.Book{Name: "Updated Book", Author: "Updated Author", Publication: "Updated Publication"}
+				err := db.CreateBook(book)
+				assert.NoError(t, err)
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+		{
+			name:      "Database error during update",
+			bookId:    "1",
+			inputBody: &models.Book{Name: "Database Error"},
+			mockSetup: func(db *models.DBModel) {
+				book := &models.Book{Name: "Original Book", Author: "Original Author", Publication: "Original Publication"}
+				db.CreateBook(book)
+				sqlDB, _ := db.DB.DB()
+				if sqlDB != nil {
+					sqlDB.Close()
+				}
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   `{"message":"An error occurred. Please try again later."}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockDb, err := tests.Setup()
+			assert.NoError(t, err)
+
+			defer func() {
+				sqlDB, _ := mockDb.DB()
+				if sqlDB != nil {
+					sqlDB.Close()
+				}
+			}()
+
+			db := &models.DBModel{DB: mockDb}
+			tc.mockSetup(db)
+
+			body, err := json.Marshal(tc.inputBody)
+			assert.NoError(t, err)
+
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPut, "/books/{id}", bytes.NewBuffer(body))
+			req = mux.SetURLVars(req, map[string]string{"id": tc.bookId})
+
+			handler := utils.SetJSONContentType(UpdateBookHandler(db))
+			handler.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.expectedStatus, rec.Code)
+			assert.JSONEq(t, tc.expectedBody, rec.Body.String())
+		})
+	}
+
+}
